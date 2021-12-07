@@ -95,22 +95,19 @@ class TelegramController < Telegram::Bot::UpdatesController
     user, _, _ = RegisteredUser.create_via_telegram(from)
     return unless user
 
-    provided_email = words[0].to_s.strip.downcase
-    if RegisteredUser.where(provided_email: provided_email).exists?
+    provided_username = words[0].to_s.strip.downcase
+    if RegisteredUser.where(username: provided_username).exists?
       respond_with_message_reply("interview:finish:exists")
       return
     end
-
-    external_id = user.get_external_id(provided_email)
-    valid = !!external_id
+    info = user.get_info(username,'username')
 
     user.update_attributes(
-      provided_email: provided_email,
-      external_id: external_id,
-      verified: valid,
-      external_response: { "external_id": external_id },
+      username: provided_username,
+      verified: !!info,
+      external_response: { "external_id": info },
     )
-    if valid
+    if !!info
       respond_with_message_reply("interview:finish:success")
       on_verification_success(user)
     else
