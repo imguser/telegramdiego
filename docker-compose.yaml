@@ -1,0 +1,70 @@
+version: '3.4'
+
+services:
+  app:
+    tty: true
+    build:
+      context: .
+      dockerfile: Dockerfile
+    depends_on:
+      - database
+      - redis
+      - worker
+    ports:
+      - "3000:3000"
+    volumes:
+      - .:/app
+      - node_modules:/app/node_modules
+
+    environment: &app-environment
+      RAILS_ENV: development
+      DATABASE_NAME: telegram_paid_membership_development
+      DATABASE_USER: admin
+      DATABASE_PASSWORD: admin
+      DATABASE_PORT: 5432
+      DATABASE_HOST: database
+      TELEGRAM_API_ID: 1149736
+      TELEGRAM_API_HASH: 8a2e44260cfcc35024640ed4280856ea
+      TELEGRAM_PHONE: +380678310282
+      TELEGRAM_BOT_TOKEN: 1138205930:AAEiN6W1Oz9IBr03YWEYQUoxvZRKL760jXE
+      TELEGRAM_BOT_USERNAME: kuveratel_hyzyla_bot
+      TELEGRAM_SESSION: dev-session
+      REDIS_URL: redis://redis:6379/12
+      EXTERNAL_API_COMSUMER_KEY: 'ck_483b880397dc4d1dee557e74de222408867d48c7'
+      EXTERNAL_API_CONSUMER_SECRET: 'cs_97c1450d79dae52e30ff05e27cc1a39f84adefbf'
+      EXTERNAL_API_EMAIL_URL: 'https://ixglobal.us/wp-json/wc/v3/customers'
+      EXTERNAL_API_SKU_URL: 'https://ixglobal.us/wp-json/wc/v1/subscriptions'
+
+  worker:
+    tty: true
+    build:
+      context: .
+      dockerfile: Dockerfile
+    depends_on:
+      - database
+      - redis
+    volumes:
+      - .:/app
+      - node_modules:/app/node_modules
+    environment:
+      <<: *app-environment
+    entrypoint: bundle exec sidekiq
+      
+
+  database:
+    image: postgres:11
+    ports: ["5432:5432"]
+    volumes:
+      - ./.database:/var/lib/postgresql/data
+    environment:
+      PGDATA: ./database
+      POSTGRES_DB: telegram_paid_membership_development
+      POSTGRES_PASSWORD: admin
+      POSTGRES_USER: admin
+
+  redis:
+    image: redis
+    hostname: redis
+
+volumes:
+  node_modules:    

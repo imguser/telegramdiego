@@ -1,0 +1,5 @@
+- add new channel snippets for `/list` command
+- check that the channel snippets is working
+- create staging application
+- wait for a day or two before deleting an added channel
+- message is not sent to unknown clients - fetch access hash when scraping user list
