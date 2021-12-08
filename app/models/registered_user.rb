@@ -53,20 +53,15 @@ class RegisteredUser < ApplicationRecord
     `python3 #{Rails.root.join('telethon', 'send_message.py')} #{id.join(" ")} "#{message}" 2>&1`
   end
 
-  def get_info(username, type)
-    user = HTTParty.get(
-      ENV["EXTERNAL_API_USERNAME_URL"],
-      query: {
-        consumer_key: ENV["EXTERNAL_API_COMSUMER_KEY"],
-        consumer_secret: ENV["EXTERNAL_API_CONSUMER_SECRET"],
-        username: username,
-      },
-    )
-    return if user.empty?
-    line_items = user['line_items']
-    return type == "sku" ? line_items : user
+ def get_info(user_provider, type)
+    header = ENV["EXTERNAL_API_KEY"]
+    body = {user: user_provider}.to_json
+    response = HTTParty.post("https://www.ixacademy.us/afl/api/v1/get-user-details/", headers:{"apikey": header}, body: body )
+    user = JSON.parse(response.body)["data"]
+    return if user.nil?
+    line_items = user["line_items"]
+    return type == "sku" ? line_items : user["data"]
   end
-
 
   def update_sku()
     return unless self.username
