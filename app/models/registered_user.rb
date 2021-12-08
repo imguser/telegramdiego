@@ -53,56 +53,19 @@ class RegisteredUser < ApplicationRecord
     `python3 #{Rails.root.join('telethon', 'send_message.py')} #{id.join(" ")} "#{message}" 2>&1`
   end
 
-  def get_external_id(email)
-
-    info = HTTParty.get(
-      ENV["EXTERNAL_API_EMAIL_URL"],
-      query: {
-        consumer_key: ENV["EXTERNAL_API_COMSUMER_KEY"],
-        consumer_secret: ENV["EXTERNAL_API_CONSUMER_SECRET"],
-        email: email,
-        role: "all",
-      },
-    )
-    return if info.empty?
-
-    customer = info.first
-    return customer['id']
-  end
-
-  def get_sku()
-    return [] unless self.external_id
-
-    info = HTTParty.get(
-      ENV["EXTERNAL_API_SKU_URL"],
-      query: {
-        consumer_key: ENV["EXTERNAL_API_COMSUMER_KEY"],
-        consumer_secret: ENV["EXTERNAL_API_CONSUMER_SECRET"],
-        customer: self.external_id,
-        status: "active",
-        platform_source: "telegram",
-      },
-    )
-    return [] if info.empty?
-    customer = info.first
-    line_items = customer['line_items']
-    addons = {}
-    if line_items.is_a? Array
-      items = customer['line_items'] || []
-    else
-      items = customer['line_items'] || {}
-      addons = items.delete('addons') || {}
-      items = items.values || []
-    end
-
-    skus = items.map{ |item|  item['product_id'] }
-    skus.push(10) if !addons.empty?
-    return skus
+ def get_info(user_provider, type)
+    header = ENV["EXTERNAL_API_KEY"]
+    body = {user: user_provider}.to_json
+    response = HTTParty.post("https://www.ixacademy.us/afl/api/v1/get-user-details/", headers:{"apikey": header}, body: body )
+    user = JSON.parse(response.body)["data"]
+    return if user.nil?
+    line_items = user["line_items"]
+    return type == "sku" ? line_items : user["data"]
   end
 
   def update_sku()
-    return unless self.external_id
-    sku = self.get_sku()
+    return unless self.username
+    sku = get_sku(self.username, "sku")
     update_attributes(sku: sku, sku_synchronized_at: Time.now.utc)
   end
 
