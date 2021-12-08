@@ -94,9 +94,9 @@ class TelegramController < Telegram::Bot::UpdatesController
   def interview_finish(*words)
     user, _, _ = RegisteredUser.create_via_telegram(from)
     return unless user
-
     provided_username = words[0].to_s.strip.downcase
-    if RegisteredUser.where(username: provided_username).exists?
+
+   if RegisteredUser.where(username: provided_username).exists?
       respond_with_message_reply("interview:finish:exists")
       return
     end
@@ -105,7 +105,7 @@ class TelegramController < Telegram::Bot::UpdatesController
     user.update_attributes(
       username: provided_username,
       verified: !!info,
-      external_response: { "external_id": info },
+      external_response: { "external_id": info["mlm_unique_id"] },
     )
     if !!info
       respond_with_message_reply("interview:finish:success")
